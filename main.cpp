@@ -31,6 +31,9 @@
 #define MBED_CONF_APP_ESP8266_RX MBED_CONF_APP_WIFI_RX
 #include "easy-connect/easy-connect.h"
 
+// K64F Accelerometer
+#include "FXOS8700CQ.h"
+
 #ifdef TARGET_STM
 #define RED_LED (LED3)
 #define GREEN_LED (LED1)
@@ -310,6 +313,72 @@ private:
     M2MObject*  big_payload;
 };
 
+class AccelerometerResource {
+public:
+    AccelerometerResource() : _accel(PTE25, PTE24, FXOS8700CQ_SLAVE_ADDR1) {
+        // Configure the Accelerometer
+        //_accel.config_int();           // enabled interrupts from accelerometer
+        //_accel.config_feature();       // turn on motion detection
+        _accel.enable();               // enable accelerometer
+
+        // create ObjectID with metadata tag of '3313', which is 'accelerometer'
+        accel_object = M2MInterfaceFactory::create_object("3313");
+        M2MObjectInstance* accel_inst = accel_object->create_object_instance();
+
+        M2MResource* accel_x = accel_inst->create_dynamic_resource("5702", "X Value",
+            M2MResourceInstance::INTEGER, true);
+        accel_x->set_operation(M2MBase::GET_ALLOWED);
+        accel_x->set_value(0);
+
+        M2MResource* accel_y = accel_inst->create_dynamic_resource("5703", "Y Value",
+            M2MResourceInstance::INTEGER, true);
+        accel_y->set_operation(M2MBase::GET_ALLOWED);
+        accel_y->set_value(0);
+
+        M2MResource* accel_z = accel_inst->create_dynamic_resource("5704", "Z Value",
+            M2MResourceInstance::INTEGER, true);
+        accel_z->set_operation(M2MBase::GET_ALLOWED);
+        accel_z->set_value(0);
+    }
+
+    M2MObject* get_object() {
+        return accel_object;
+    }
+
+    void read_accel() {
+        if (mbed_client.register_successful()) {
+            SRAWDATA accel;
+            SRAWDATA mag;
+            _accel.get_data(&accel, &mag);
+
+            char buffer[20];
+            M2MObjectInstance* inst = accel_object->object_instance();
+            M2MResource* res;
+            int size;
+
+            res = inst->resource("5702");
+            size = sprintf(buffer, "%d", accel.x);
+            res->set_value((uint8_t*)buffer, size);
+
+            res = inst->resource("5703");
+            size = sprintf(buffer, "%d", accel.y);
+            res->set_value((uint8_t*)buffer, size);
+
+            res = inst->resource("5704");
+            size = sprintf(buffer, "%d", accel.z);
+            res->set_value((uint8_t*)buffer, size);
+
+            //printf("Updated accel to %d,%d,%d\n", accel.x, accel.y, accel.z);
+        }
+    }
+
+private:
+    // Configured for the FRDM-K64F with onboard sensors
+    //InterruptIn _accel_int_pin(PTC13);
+    FXOS8700CQ _accel;
+    M2MObject* accel_object;
+};
+
 // Network interaction must be performed outside of interrupt context
 Semaphore updates(0);
 volatile bool registered = false;
@@ -377,6 +446,7 @@ Add MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES and MBEDTLS_TEST_NULL_ENTROPY in mbed_app
     ButtonResource button_resource;
     LedResource led_resource;
     BigPayloadResource big_payload_resource;
+    AccelerometerResource accel_resource;
 
 #ifdef TARGET_K64F
     // On press of SW3 button on K64F board, example application
@@ -406,6 +476,7 @@ Add MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES and MBEDTLS_TEST_NULL_ENTROPY in mbed_app
     object_list.push_back(button_resource.get_object());
     object_list.push_back(led_resource.get_object());
     object_list.push_back(big_payload_resource.get_object());
+    object_list.push_back(accel_resource.get_object());
 
     // Set endpoint registration object
     mbed_client.set_register_object(register_object);
@@ -414,18 +485,26 @@ Add MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES and MBEDTLS_TEST_NULL_ENTROPY in mbed_app
     mbed_client.test_register(register_object, object_list);
     registered = true;
 
+    int stepcount = 0;
     while (true) {
-        updates.wait(25000);
-        if(registered) {
-            if(!clicked) {
+        updates.wait(1000);
+        stepcount++;
+        if (registered) {
+            if(stepcount % 25 == 0) {
+                stepcount = 0;
                 mbed_client.test_update_register();
             }
-        }else {
+        } else {
             break;
         }
-        if(clicked) {
+        if (clicked) {
             clicked = false;
             button_resource.handle_button_click();
+        }
+
+        // update the accelerometer every other tick
+        if (stepcount & 1) {
+            accel_resource.read_accel();
         }
     }
 
