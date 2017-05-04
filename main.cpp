@@ -176,7 +176,7 @@ public:
             int payload_length = param->get_argument_value_length();
             uint8_t* payload = param->get_argument_value();
             printf("Resource: %s/%d/%s executed\n", object_name.c_str(), object_instance_id, resource_name.c_str());
-            printf("Payload: %.*s\n", payload_length, payload);
+            printf("Payload: %.*s [%d]\n", payload_length, payload, payload_length);
         }
         // do_blink is called with the vector, and starting at -1
         blinky_thread.start(callback(this, &LedResource::do_blink));
