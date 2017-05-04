@@ -325,17 +325,17 @@ public:
         accel_object = M2MInterfaceFactory::create_object("3313");
         M2MObjectInstance* accel_inst = accel_object->create_object_instance();
 
-        M2MResource* accel_x = accel_inst->create_dynamic_resource("5702", "X Value",
+        M2MResource* accel_x = accel_inst->create_dynamic_resource("5702", "AccelX",
             M2MResourceInstance::INTEGER, true);
         accel_x->set_operation(M2MBase::GET_ALLOWED);
         accel_x->set_value(0);
 
-        M2MResource* accel_y = accel_inst->create_dynamic_resource("5703", "Y Value",
+        M2MResource* accel_y = accel_inst->create_dynamic_resource("5703", "AccelY",
             M2MResourceInstance::INTEGER, true);
         accel_y->set_operation(M2MBase::GET_ALLOWED);
         accel_y->set_value(0);
 
-        M2MResource* accel_z = accel_inst->create_dynamic_resource("5704", "Z Value",
+        M2MResource* accel_z = accel_inst->create_dynamic_resource("5704", "AccelZ",
             M2MResourceInstance::INTEGER, true);
         accel_z->set_operation(M2MBase::GET_ALLOWED);
         accel_z->set_value(0);
@@ -381,11 +381,11 @@ private:
 
 class AnalogInResource {
 public:
-    AnalogInResource(PinName pin, const String &resource_id="3203") : _analog_in(pin) {
+    AnalogInResource(PinName pin, const String &resource_id="3203", const String &name="AnalogIn") : _analog_in(pin) {
         analog_object = M2MInterfaceFactory::create_object(resource_id);
         M2MObjectInstance* analog_inst = analog_object->create_object_instance();
 
-        M2MResource* analog_resource = analog_inst->create_dynamic_resource("5600", "Current Value",
+        M2MResource* analog_resource = analog_inst->create_dynamic_resource("5600", name,
             M2MResourceInstance::FLOAT, true);
         analog_resource->set_operation(M2MBase::GET_ALLOWED);
         analog_resource->set_value(0.0f);
@@ -476,9 +476,9 @@ Add MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES and MBEDTLS_TEST_NULL_ENTROPY in mbed_app
     LedResource led_resource;
     BigPayloadResource big_payload_resource;
     AccelerometerResource accel_resource;
-    AnalogInResource sound_level_resource(A0, "3324");
-    AnalogInResource temperature_resource(A1, "3303");
-    AnalogInResource luminosity_resource(A2, "3301");
+    AnalogInResource sound_level_resource(A0, "3324", "SoundLevel");
+    AnalogInResource temperature_resource(A1, "3303", "Temperature");
+    AnalogInResource luminosity_resource(A2, "3301", "Light");
 
 #ifdef TARGET_K64F
     // On press of SW3 button on K64F board, example application
@@ -509,6 +509,9 @@ Add MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES and MBEDTLS_TEST_NULL_ENTROPY in mbed_app
     object_list.push_back(led_resource.get_object());
     object_list.push_back(big_payload_resource.get_object());
     object_list.push_back(accel_resource.get_object());
+    object_list.push_back(sound_level_resource.get_object());
+    object_list.push_back(temperature_resource.get_object());
+    object_list.push_back(luminosity_resource.get_object());
 
     // Set endpoint registration object
     mbed_client.set_register_object(register_object);
