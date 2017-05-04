@@ -1,3 +1,16 @@
+# Quick start guide with a K64F device and mbed-cli/gcc
+
+This assumes you already have mbed-cli and gcc set up, and a K64F device connected.
+
+* mbed import mbed-os-example-client _(or: mbed import https://github.com/CristianPrundeanuARM/exd-tsdb-mbed-client-connector)_
+* cd $_
+* mbed target K64F
+* mbed toolchain GCC_ARM
+* _**replace security.h as per https://connector.mbed.com/#credentials**_
+* mbed compile
+* cp BUILD/K64F/GCC_ARM/*.bin /Volumes/DAPLINK/
+* _**after flashing is done, reboot the board by pressing the RESET button**_
+
 # Getting started with mbed Client on mbed OS
 
 This is the mbed Client example for mbed OS (we also have one for [Linux](https://github.com/ARMmbed/mbed-client-linux-example)). It demonstrates how to register a device with mbed Device Connector, how to read and write values, and how to deregister. If you are unfamiliar with mbed Device Connector, we recommend that you read [the introduction to the data model](https://docs.mbed.com/docs/mbed-device-connector-web-interfaces/en/latest/#the-mbed-device-connector-data-model) first.
